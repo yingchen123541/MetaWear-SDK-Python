@@ -9,7 +9,7 @@ import platform
 import six
 from threading import Event
 
-# event
+#event
 e = Event()
 
 #pre-defined function:
@@ -84,9 +84,23 @@ signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
 #store data signal in sensor board memory. Once the memory is full, old data may be overwritten by new data. 
 logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
 #start logging data
-libmetawear.mbl_mw_logging_start(device1.board, 5)
+libmetawear.mbl_mw_logging_start(device1.board, 0)
 #libmetawear.mbl_mw_datasignal_read(signal)
 print(signal)
+#stop logging data
+libmetawear.mbl_mw_logging_stop(device1.board)
+
+sleep(5.0)
+
+libmetawear.mbl_mw_logging_start(device1.board, 0)
+print(signal)
+libmetawear.mbl_mw_logging_stop(device1.board)
+
+
+#MetaMotionS board uses NAND flash memory to store data, The NAND memory stores data in pages that are 512 entries large. When data is retrieved, it is retrieved in page sized chunks. Before doing a full download of the log memory on the MMS, the final set of data needs to be written to the NAND flash before it can be downloaded as a page, you must call the function:
+libmetawear.mbl_mw_logging_flush_page(device1.board)
+
+#download data file from the log memory in the sensor
 
 
 
