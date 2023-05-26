@@ -1,16 +1,12 @@
-# Requires: sudo pip3 install metawear
-# usage: sudo python3 scan_connect.py
 from __future__ import print_function
-from mbientlab.metawear import MetaWear, libmetawear
+from mbientlab.metawear import MetaWear, libmetawear, parse_value
 from mbientlab.metawear.cbindings import *
 from mbientlab.warble import * 
 from time import sleep
 import platform
 import six
 from threading import Event
-
-#event
-e = Event()
+import csv
 
 #pre-defined function:
 #function1: create_voidp function is for logger feature to store data signal in sensor board memory to access it later
@@ -31,98 +27,155 @@ def create_voidp(fn, **kwargs):
         raise result[0]
     return result[0]
 
-#function2:
+# pre define function2:
 def create_voidp_int(fn, **kwargs):
     e = kwargs['event'] if 'event' in kwargs else Event()
     result = [None]
 
 
+acceleration = [ [], [], [] ]
+elapsedTime = [0]
 
-#connect to sensor NO.1 with address(C5:12:30:A0:1D:D8) on the sensor back sticker
-device1 = MetaWear("C5:12:30:A0:1D:D8")
-device1.connect()
-print("Connected to " + device1.address + " over " + ("USB" if device1.usb.is_connected else "??"))
-print("Device1 information: " + str(device1.info))
-sleep(5.0)
+def __init__(self, MACaddress):
+    self.device = MetaWear(address)
+    self.samples = 0
+    self.callback = FnVoid_VoidP_DataP(self.data_handler)
+    self.initTime = 0
+    self.thisEpoch = 0
 
+def data_handler(self, ctx, data):
+    coordinates = parse_value(data)
+    acceleration[0].append(coordinates.x*9.8)
+    acceleration[1].append(coordinates.y*9.8)
+    acceleration[2].append(coordinates.z*9.8)
+    self.thisEpoch = data.contents.epoch
+    if(self.samples == 0):
+      self.initTime = self.thisEpoch
+      
+    #Rest of samples
+    else:
+      elapsedTime.append(float(self.thisEpoch-self.initTime))
+      
+    self.samples += 1
 
-#code for fully resetting metawear board
-#libmetawear.mbl_mw_debug_reset(d.board)
+#function for connecting sensor device
+def connect(self):
+    self.connect()
+    print("Connected to " + device1.address + " over " + ("USB" if device1.usb.is_connected else "??"))
+    print("Device information: " + str(device1.info))
 
+# function for blinking the LED blue light 
+def blink_light(self):
+    pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
+    libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
+    libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.BLUE)
+    libmetawear.mbl_mw_led_play(self.board)
+    sleep(5.0)
+    libmetawear.mbl_mw_led_stop_and_clear(self.board)
+    sleep(1.0)
 
-#MetaWear API, blink the LED green in SDK tutorial 
-pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
-libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
-libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.BLUE)
-libmetawear.mbl_mw_led_play(device1.board)
-sleep(5.0)
-libmetawear.mbl_mw_led_stop_and_clear(device1.board)
-sleep(1.0)
+#this function got combined with the download function into the log_and_downloadData function
+# def startLogging(self):
+#     signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
+#     logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+#     libmetawear.mbl_mw_logging_start(self.board, 0)
+#     libmetawear.mbl_mw_acc_enable_acceleration_sampling(self.board)
+#     libmetawear.mbl_mw_acc_start(self.board)
+#     print("logging data for 5s")
+#     sleep(5.0)
+#     libmetawear.mbl_mw_acc_stop(device1.board)
+#     libmetawear.mbl_mw_acc_disable_acceleration_sampling(device1.board)
+#     libmetawear.mbl_mw_logging_stop(device1.board)
 
-
-# #MetaWear API, get data signals from the accelerometer
-# signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
-# #store data signal in sensor board memory. Once the memory is full, old data may be overwritten by new data. 
-# logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger", event = e)
-# #create an event that reads the accelerometer data signal every time the timer reaches 1000ms(1s):
-# timer = create_voidp(lambda fn: libmetawear.mbl_mw_timer_create_indefinite(device1.board, 1000, 0, None, fn), resource = "timer", event = e)
-# libmetawear.mbl_mw_event_record_commands(timer)
-# libmetawear.mbl_mw_datasignal_read(signal)
-# print(signal)
-# create_voidp_int(lambda fn: libmetawear.mbl_mw_event_end_record(timer, None, fn), event = e)
-
-# #start logging data
-# libmetawear.mbl_mw_logging_start(device1.board, 0)
-# #start timer
-# libmetawear.mbl_mw_timer_start(timer)
-
-
-
-
-#MetaWear API, get data signals from the accelerometer
-signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
-#store data signal in sensor board memory. Once the memory is full, old data may be overwritten by new data. 
-logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
-#start logging data
-libmetawear.mbl_mw_logging_start(device1.board, 0)
-#libmetawear.mbl_mw_datasignal_read(signal)
-print(signal)
-#stop logging data
-libmetawear.mbl_mw_logging_stop(device1.board)
-
-sleep(5.0)
-
-libmetawear.mbl_mw_logging_start(device1.board, 0)
-print(signal)
-libmetawear.mbl_mw_logging_stop(device1.board)
-
-
-#MetaMotionS board uses NAND flash memory to store data, The NAND memory stores data in pages that are 512 entries large. When data is retrieved, it is retrieved in page sized chunks. Before doing a full download of the log memory on the MMS, the final set of data needs to be written to the NAND flash before it can be downloaded as a page, you must call the function:
-libmetawear.mbl_mw_logging_flush_page(device1.board)
-
-#download data file from the log memory in the sensor
-
-
-
-
-
-
- 
-# def logger_ready(self, context, pointer):
-#     self.logger = pointer
-
-# logger_created_fn= FnVoid_VoidP_VoidP(logger_ready)
-# libmetawear.mbl_mw_datasignal_log(signal, None, logger_created_fn)
+#this function got combined with the startLogging function into the log_and_downloadData function
+#download logged data 
+# def downloadData(self):
+#     e = Event()
+#     def progress_update_handler(context, entries_left, total_entries):
+#       if (entries_left == 0):
+#         e.set()
+        
+#     signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
+#     logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+#     fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
+#     download_handler = LogDownloadHandler(context = None, received_progress_update = fn_wrapper, received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
+#     callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
+#     libmetawear.mbl_mw_logger_subscribe(logger, None, callback)
+#     libmetawear.mbl_mw_logging_download(self.board, 0, byref(download_handler))
 
 
+def log_and_downloadData(self): #this function combined startLogging and downloadData functions, it will log movement data then store it in sensor then download stored data from sensor  
+    signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
+    logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+    libmetawear.mbl_mw_logging_start(self.board, 0)
+    libmetawear.mbl_mw_acc_enable_acceleration_sampling(self.board)
+    libmetawear.mbl_mw_acc_start(self.board)
+    print("logging data for 5s")
+    sleep(5.0)
+    libmetawear.mbl_mw_acc_stop(device1.board)
+    libmetawear.mbl_mw_acc_disable_acceleration_sampling(device1.board)
+    libmetawear.mbl_mw_logging_stop(device1.board)
+    print("Downloading data")
+    libmetawear.mbl_mw_settings_set_connection_parameters(self.board, 7.5, 7.5, 0, 6000)
+    sleep(1.0)
+    e = Event()
+    def progress_update_handler(context, entries_left, total_entries):
+      if (entries_left == 0):
+        e.set()
+        
+    # signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
+    # logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+    fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
+    download_handler = LogDownloadHandler(context = None, \
+     received_progress_update = fn_wrapper, \
+     received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
+     received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
+    callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
+    libmetawear.mbl_mw_logger_subscribe(logger, None, callback)
+    libmetawear.mbl_mw_logging_download(self.board, 0, byref(download_handler))
+    e.wait()
+
+#function to disconnect the sensor 
+def disconnect(self):
+    self.disconnect()
+    print("device disconnected") 
+
+
+
+#function to write download data into a json file, not working, same type error as the log_and_downloadData function
+# def downloadFormatted(self):
+#     libmetawear.mbl_mw_logging_stop(self.board)
+#     libmetawear.mbl_mw_acc_disable_acceleration_sampling(self.board)
+#     signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
+#     logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+#     callback = data_handler(self, lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
+#     libmetawear.mbl_mw_logger_subscribe(logger, None, callback)
+#     libmetawear.mbl_mw_logging_download(self.board, 0, byref(self.data_handler))
+    
+#     with open('Acc.csv', mode ='w') as acc_file:
+#       acc_writer = csv.writer(acc_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+#       acc_writer.writerow(['Time(ms)', 'X', 'Y', 'Z' ])
+#       for i in range(len(acceleration[0])):
+#         acc_writer.writerow([elapsedTime[i], acceleration[0][i], acceleration[1][i],acceleration[2][i]])
+        
 
 
 
 
 
+#call functions
+address = "C5:12:30:A0:1D:D8"
+device1 = MetaWear(address)
+connect(device1)
+blink_light(device1)
+#startLogging(device1)ss
+#downloadData(device1)
+log_and_downloadData(device1) #this function is not working for now, line 153 has type error in function argument 
+#downloadFormatted(device1)
+disconnect(device1)
 
 
-#disconnect sensor device 1
-device1.disconnect()
-sleep(1.0)
-print("device1 disconnected") 
+
+# sensor address(C5:12:30:A0:1D:D8) is on the sensor back sticker
+#looks like 2035991952368 is the epoch number, not the actual xyz value 
+
