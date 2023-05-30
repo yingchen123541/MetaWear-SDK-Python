@@ -106,15 +106,19 @@ def blink_light(self):
 
 def log_and_downloadData(self): #this function combined startLogging and downloadData functions, it will log movement data then store it in sensor then download stored data from sensor  
     signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.board)
-    logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+    #both of the logger have errors, but different type of error
+    #2nd logger come from here:https://mbientlab.com/pythondocs/latest/logger.html
+   # logger = c reate_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
+    logger = libmetawear.mbl_mw_logger_lookup_id(self.board, 0)
     libmetawear.mbl_mw_logging_start(self.board, 0)
     libmetawear.mbl_mw_acc_enable_acceleration_sampling(self.board)
     libmetawear.mbl_mw_acc_start(self.board)
-    print("logging data for 5s")
     sleep(5.0)
+    print("logging data for 5s")
     libmetawear.mbl_mw_acc_stop(device1.board)
     libmetawear.mbl_mw_acc_disable_acceleration_sampling(device1.board)
     libmetawear.mbl_mw_logging_stop(device1.board)
+    print("Finished logging")
     print("Downloading data")
     libmetawear.mbl_mw_settings_set_connection_parameters(self.board, 7.5, 7.5, 0, 6000)
     sleep(1.0)
