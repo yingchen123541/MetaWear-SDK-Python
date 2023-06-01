@@ -15,8 +15,6 @@ import csv
 #     xyz = data["value"]
 #     print(str(data))
 
-mwclient.accelerometer.notifications(handle_acc_notification)
-
 #pre-defined function:
 #function1: create_voidp function is for logger feature to store data signal in sensor board memory to access it later
 def create_voidp(fn, **kwargs):
