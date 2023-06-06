@@ -14,6 +14,7 @@ import csv
 #the wrong data type error for libmetawear.mbl_mw_logger_subscribe(signal, None, callback) is gone now at least after using signal instead of logger for argument1
 #put the start logging statement in a loop to keep logging!!
 #using sleep means it's just pausing instead of keep logging for five seconds 
+#need to pass in the data handler in the code somewhere for it to print out xyz, maybe replace callback with data handler, now using callback and it's not printing out anything 
 
 #event
 e = Event()
