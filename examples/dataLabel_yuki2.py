@@ -12,6 +12,8 @@ import csv
 #only printing out the epoch number but not the xyz position..
 #also only 1 epoch got printed out, not sure if it's only collecting 1 data point or keep overwriting the old data...
 #the wrong data type error for libmetawear.mbl_mw_logger_subscribe(signal, None, callback) is gone now at least after using signal instead of logger for argument1
+#put the start logging statement in a loop to keep logging!!
+#using sleep means it's just pausing instead of keep logging for five seconds 
 
 #event
 e = Event()
