@@ -10,6 +10,7 @@ from threading import Event
 import csv
 
 #only printing out the epoch number but not the xyz position..
+#also only 1 epoch got printed out, not sure if it's only collecting 1 data point or keep overwriting the old data...
 #the wrong data type error for libmetawear.mbl_mw_logger_subscribe(signal, None, callback) is gone now at least after using signal instead of logger for argument1
 
 #event
@@ -93,6 +94,20 @@ def disconnect(self):
     self.disconnect()
     print("device disconnected") 
 
+def blink_light_green(self):
+    pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
+    libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
+    libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.GREEN)
+    libmetawear.mbl_mw_led_play(self.board)
+
+def blink_light_red(self):
+    pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
+    libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
+    libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.RED)
+    libmetawear.mbl_mw_led_play(self.board)
+    sleep(2.0)
+    libmetawear.mbl_mw_led_stop_and_clear(self.board)
+
 def __init__(self, MACaddress):
     self.device = MetaWear(address)
     self.samples = 0
@@ -126,9 +141,13 @@ signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
 logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
 #start logging data for 10s
 libmetawear.mbl_mw_logging_start(device1.board, 0)
+print("logging data...")
+blink_light_green(device1)
 sleep(5.0)
 #stop logging data
 libmetawear.mbl_mw_logging_stop(device1.board)
+print("stop logging data...")
+blink_light_red(device1)
 # data = 0.00
 # coordinates = parse_value(data)
 # acceleration[0].append(coordinates.x*9.8)
@@ -160,7 +179,7 @@ callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p
 libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
 e = Event()
 libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
-print("download data...")
+print("downloading data...")
 e.wait()
 
 disconnect(device1) 
