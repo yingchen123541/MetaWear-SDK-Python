@@ -136,10 +136,12 @@ def log_and_downloadData(self): #this function combined startLogging and downloa
     libmetawear.mbl_mw_acc_disable_acceleration_sampling(self.board)
     libmetawear.mbl_mw_logging_stop(self.board)
     print("Finished logging")
+    print(signal)
     print("Downloading data")
     libmetawear.mbl_mw_settings_set_connection_parameters(self.board, 7.5, 7.5, 0, 6000)
     sleep(1.0)
     e = Event()
+
     def progress_update_handler(context, entries_left, total_entries):
       if (entries_left == 0):
         e.set()
@@ -152,7 +154,9 @@ def log_and_downloadData(self): #this function combined startLogging and downloa
      received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
      received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
     callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
-    libmetawear.mbl_mw_logger_subscribe(logger, None, callback)
+    libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
+    # print(acceleration[0]) looks like the epoch/xyz data didn't get save to memory or didn't get append to array 
+    # print(acceleration[1])
     libmetawear.mbl_mw_logging_download(self.board, 0, byref(download_handler))
     e.wait()
 
