@@ -21,48 +21,6 @@ import csv
 #event
 e = Event()
 
-# _value_parsers = {
-#     DataTypeId.UINT32: lambda p: cast(p.contents.value, POINTER(c_uint)).contents.value,
-#     DataTypeId.INT32: lambda p: cast(p.contents.value, POINTER(c_int)).contents.value,
-#     DataTypeId.FLOAT: lambda p: cast(p.contents.value, POINTER(c_float)).contents.value,
-#     DataTypeId.CARTESIAN_FLOAT: lambda p: cast(p.contents.value, POINTER(CartesianFloat)).contents,
-#     DataTypeId.BATTERY_STATE: lambda p: cast(p.contents.value, POINTER(BatteryState)).contents,
-#     DataTypeId.TCS34725_ADC: lambda p: cast(p.contents.value, POINTER(Tcs34725ColorAdc)).contents,
-#     DataTypeId.EULER_ANGLE: lambda p: cast(p.contents.value, POINTER(EulerAngles)).contents,
-#     DataTypeId.QUATERNION: lambda p: cast(p.contents.value, POINTER(Quaternion)).contents,
-#     DataTypeId.CORRECTED_CARTESIAN_FLOAT: lambda p: cast(p.contents.value, POINTER(CorrectedCartesianFloat)).contents,
-#     DataTypeId.OVERFLOW_STATE: lambda p: cast(p.contents.value, POINTER(OverflowState)).contents,
-#     DataTypeId.LOGGING_TIME: lambda p: cast(p.contents.value, POINTER(LoggingTime)).contents,
-#     DataTypeId.BTLE_ADDRESS: lambda p: cast(p.contents.value, POINTER(BtleAddress)).contents,
-#     DataTypeId.BOSCH_ANY_MOTION: lambda p: cast(p.contents.value, POINTER(BoschAnyMotion)).contents,
-#     DataTypeId.CALIBRATION_STATE: lambda p: cast(p.contents.value, POINTER(CalibrationState)).contents,
-#     DataTypeId.BOSCH_TAP: lambda p: cast(p.contents.value, POINTER(BoschTap)).contents
-# }
-
-# def parse_value(pointer, **kwargs):
-    # """
-    # Helper function to extract the value from a Data object.  If you are storing the values to be used at a later time, 
-    # call copy.deepcopy preserve the value.  You do not need to do this if the underlying type is a native type or a byte array
-    # @params:
-    #     pointer     - Required  : Pointer to a Data object
-    #     n_elem      - Optional  : Nummber of elements in the value array if the type_id attribute is DataTypeId.DATA_ARRAY
-    # """
-    # if (pointer.contents.type_id in _value_parsers):
-    #     return _value_parsers[pointer.contents.type_id](pointer)
-    # elif (pointer.contents.type_id == DataTypeId.SENSOR_ORIENTATION):
-    #     return _value_parsers[DataTypeId.INT32](pointer)
-    # elif (pointer.contents.type_id == DataTypeId.BYTE_ARRAY):
-    #     array_ptr= cast(pointer.contents.value, POINTER(c_ubyte * pointer.contents.length))
-    #     return [array_ptr.contents[i] for i in range(0, pointer.contents.length)]
-    # elif (pointer.contents.type_id == DataTypeId.DATA_ARRAY):
-    #     if 'n_elem' in kwargs:
-    #         values = cast(pointer.contents.value, POINTER(POINTER(Data) * kwargs['n_elem']))
-    #         return [parse_value(values.contents[i]) for i in range(0, kwargs['n_elem'])]
-    #     else:
-    #         raise RuntimeError("Missing optional parameter 'n_elem' for parsing DataTypeId.DATA_ARRAY value")
-    # else:
-    #     raise RuntimeError('Unrecognized data type id: ' + str(pointer.contents.type_id))
-
 #pre-defined function:
 #function1: create_voidp function is for logger feature to store data signal in sensor board memory to access it later
 def create_voidp(fn, **kwargs):
@@ -106,6 +64,7 @@ def blink_light_green(self):
     libmetawear.mbl_mw_led_play(self.board)
 
 def blink_light_red(self):
+    libmetawear.mbl_mw_led_stop_and_clear(self.board) #stop blinking greenlight
     pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
     libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
     libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.RED)
@@ -113,10 +72,10 @@ def blink_light_red(self):
     sleep(2.0)
     libmetawear.mbl_mw_led_stop_and_clear(self.board)
 
-def __init__(self, MACaddress):
+def __init__(self):
     self.device = MetaWear(address)
     self.samples = 0
-    self.callback = FnVoid_VoidP_DataP(self.data_handler)
+    self.callback = FnVoid_VoidP_DataP(data_handler)
     self.initTime = 0
     self.thisEpoch = 0
 
@@ -133,6 +92,7 @@ def data_handler(self, ctx, data):
     else:
       elapsedTime.append(float(self.thisEpoch-self.initTime))  
     self.samples += 1
+    print("data point: ",self.sample, acceleration[0], acceleration[1], acceleration[2])
 
 # def data_handler1(self, ctx, data):
 #         print("%s -> %s" % (self.device.address, parse_value(data)))
@@ -142,6 +102,7 @@ def data_handler(self, ctx, data):
 address = "C5:12:30:A0:1D:D8"
 device1 = MetaWear(address)
 connect(device1)
+__init__(device1)
 
 #log data 
 signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
@@ -183,15 +144,18 @@ libmetawear.mbl_mw_logging_flush_page(device1.board)
 def progress_update_handler(context, entries_left, total_entries):
       if (entries_left == 0):
         e.set()
-        
+
+#fn_wrapper = FnVoid_VoidP_UInt_UInt(data_handler)
 fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
 download_handler = LogDownloadHandler(context = None, \
-     received_progress_update = fn_wrapper, \
-     received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
-     received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
-callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
+    received_progress_update = fn_wrapper, \
+    #received_data_signal = fn_wrapper, \
+  #  received_data_signal = FnVoid_VoidP_DataP(lambda ctx,)
+    received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
+    received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
+#callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
 #callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
-libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
+libmetawear.mbl_mw_logger_subscribe(signal, None, device1.callback)
 e = Event()
 libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
 print("downloading data...")
