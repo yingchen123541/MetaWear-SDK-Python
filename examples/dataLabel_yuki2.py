@@ -64,20 +64,12 @@ def blink_light_green(self):
     libmetawear.mbl_mw_led_play(self.board)
 
 def blink_light_red(self):
-    libmetawear.mbl_mw_led_stop_and_clear(self.board) #stop blinking greenlight
     pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
     libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
     libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.RED)
     libmetawear.mbl_mw_led_play(self.board)
     sleep(2.0)
     libmetawear.mbl_mw_led_stop_and_clear(self.board)
-
-def __init__(self):
-    self.device = MetaWear(address)
-    self.samples = 0
-    self.callback = FnVoid_VoidP_DataP(data_handler)
-    self.initTime = 0
-    self.thisEpoch = 0
 
 acceleration = [ [], [], [] ]
 elapsedTime = [0]
@@ -93,6 +85,13 @@ def data_handler(self, ctx, data):
       elapsedTime.append(float(self.thisEpoch-self.initTime))  
     self.samples += 1
     print("data point: ",self.sample, acceleration[0], acceleration[1], acceleration[2])
+
+def __init__(self):
+    self.device = MetaWear(address)
+    self.samples = 0
+    self.callback = FnVoid_VoidP_DataP(data_handler)
+    self.initTime = 0
+    self.thisEpoch = 0
 
 # def data_handler1(self, ctx, data):
 #         print("%s -> %s" % (self.device.address, parse_value(data)))
@@ -115,11 +114,15 @@ logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None,
 # libmetawear.mbl_mw_acc_bosch_set_range(device1.board, AccBoschRange._4G)
 
 # libmetawear.mbl_mw_acc_enable_acceleration_sampling(device1.board)
-libmetawear.mbl_mw_logging_start(device1.board, 0)
+num_datapoint = [0,1,2,3] #use sensor to log 4 data points, how come all the data points are the same???
 print("logging data...")
 blink_light_green(device1)
-sleep(5.0)
-#stop logging data
+for number in num_datapoint:
+    libmetawear.mbl_mw_logging_start(device1.board, 0)
+    #sleep(5.0)
+    print(signal)
+
+#stop logging data after 4 data points
 libmetawear.mbl_mw_logging_stop(device1.board)
 print("stop logging data...")
 blink_light_red(device1)
@@ -134,7 +137,7 @@ blink_light_red(device1)
 # else:
 #     elapsedTime.append(float(device1.thisEpoch-device1.initTime))  
 #     device1.samples += 1
-print(signal)
+
 
 #meta motion s Before doing a full download of the log memory on the MMS, the final set of data needs to be written to the NAND flash before it can be downloaded as a page. To do this, you must call the function:
 #this should not be called when you are still logging data
@@ -145,17 +148,15 @@ def progress_update_handler(context, entries_left, total_entries):
       if (entries_left == 0):
         e.set()
 
-#fn_wrapper = FnVoid_VoidP_UInt_UInt(data_handler)
 fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
 download_handler = LogDownloadHandler(context = None, \
     received_progress_update = fn_wrapper, \
-    #received_data_signal = fn_wrapper, \
-  #  received_data_signal = FnVoid_VoidP_DataP(lambda ctx,)
+    received_data_signal = FnVoid_VoidP_DataP(data_handler), \
     received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
     received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
 #callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
-#callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
-libmetawear.mbl_mw_logger_subscribe(signal, None, device1.callback)
+callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
+libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
 e = Event()
 libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
 print("downloading data...")
