@@ -9,12 +9,14 @@ import six
 from threading import Event
 import csv
 
-#only printing out the epoch number but not the xyz position..
+#only printing out the epoch number but not the xyz position.. 
+#try out code in this link: https://mbientlab.com/pythondocs/latest/datasignal.html I just started this...either continue where i left off or restore to previous version and start over
 #also only 1 epoch got printed out, not sure if it's only collecting 1 data point or keep overwriting the old data...
 #the wrong data type error for libmetawear.mbl_mw_logger_subscribe(signal, None, callback) is gone now at least after using signal instead of logger for argument1
 #put the start logging statement in a loop to keep logging!!
 #using sleep means it's just pausing instead of keep logging for five seconds 
 #need to pass in the data handler in the code somewhere for it to print out xyz, maybe replace callback with data handler, now using callback and it's not printing out anything 
+#also the data handler doesn't have any print statement maybe that's why nothing is printing out...
 
 #event
 e = Event()
@@ -132,6 +134,9 @@ def data_handler(self, ctx, data):
       elapsedTime.append(float(self.thisEpoch-self.initTime))  
     self.samples += 1
 
+# def data_handler1(self, ctx, data):
+#         print("%s -> %s" % (self.device.address, parse_value(data)))
+#         self.samples+= 1
 
 #call functions
 address = "C5:12:30:A0:1D:D8"
@@ -143,6 +148,12 @@ signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
 #store data signal in sensor board memory. Once the memory is full, old data may be overwritten by new data. 
 logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None, fn), resource = "acc_logger")
 #start logging data for 10s
+# accel_data_signal= libmetawear.mbl_mw_acc_bosch_get_acceleration_data_signal(device1.board)
+
+# libmetawear.mbl_mw_datasignal_subscribe(accel_data_signal, None, FnVoid_VoidP_DataP(device1.data_handler))
+# libmetawear.mbl_mw_acc_bosch_set_range(device1.board, AccBoschRange._4G)
+
+# libmetawear.mbl_mw_acc_enable_acceleration_sampling(device1.board)
 libmetawear.mbl_mw_logging_start(device1.board, 0)
 print("logging data...")
 blink_light_green(device1)
@@ -179,6 +190,7 @@ download_handler = LogDownloadHandler(context = None, \
      received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
      received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
 callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
+#callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
 libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
 e = Event()
 libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
