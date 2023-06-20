@@ -144,21 +144,25 @@ def progress_update_handler(context, entries_left, total_entries):
       if (entries_left == 0):
         e.set()
 
-fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
-download_handler = LogDownloadHandler(context = None, \
-    received_progress_update = fn_wrapper, \
-    received_data_signal = FnVoid_VoidP_DataP(data_handler), \
-    received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
-    received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
+fn_wrapper = FnVoid_VoidP_DataP(data_handler)
+#fn_wrapper = FnVoid_VoidP_UInt_UInt(progress_update_handler)
+
+# download_handler = LogDownloadHandler(context = None, \
+#     received_progress_update = fn_wrapper, \
+#     received_data_signal = FnVoid_VoidP_DataP(data_handler), \
+#     received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
+#     received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
+
 #callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
 #callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
 libmetawear.mbl_mw_logger_subscribe(signal, None, device1.callback)
-e = Event()
-libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
-print("downloading data...")
-e.wait()
+#e = Event()
+# libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
+# print("downloading data...")
+#e.wait()
 
 disconnect(device1) 
+
 
 
 
