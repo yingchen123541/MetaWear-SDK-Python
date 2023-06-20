@@ -69,6 +69,7 @@ def blink_light_red(self):
 acceleration = [ [], [], [] ]
 elapsedTime = [0]
 def data_handler(self, ctx, data):
+    print("Accelerometer data: x = {0:.3f}, y = {1:.3f}, z = {2:.3f}".format(data['accelerometer'][0], data['accelerometer'][1], data['accelerometer'][2]))
     print("%s -> %s" % (self.device.address, parse_value(data)))
     coordinates = parse_value(data)
     acceleration[0].append(coordinates.x*9.8)

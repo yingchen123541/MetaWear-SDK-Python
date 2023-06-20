@@ -64,9 +64,9 @@ class FusionDevice:
       
     self.samples += 1
     
-  def connect(self):
+  def connect(self,address):
     self.device.connect()
-    print("device connected")
+    print("device connected", address)
     
   def configure(self):
     libmetawear.mbl_mw_settings_set_connection_parameters(self.device.board, 7.5, 7.5, 0, 6000)
@@ -124,7 +124,7 @@ class FusionDevice:
 
 address = 'C5:12:30:A0:1D:D8'
 deviceTest = FusionDevice(address)
-deviceTest.connect()
+deviceTest.connect(address)
 deviceTest.configure()
 deviceTest.startLogging()
 sleep(5.0)
