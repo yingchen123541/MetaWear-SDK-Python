@@ -69,6 +69,7 @@ def blink_light_red(self):
 acceleration = [ [], [], [] ]
 elapsedTime = [0]
 def data_handler(self, ctx, data):
+    print("%s -> %s" % (self.device.address, parse_value(data)))
     coordinates = parse_value(data)
     acceleration[0].append(coordinates.x*9.8)
     acceleration[1].append(coordinates.y*9.8)
@@ -150,8 +151,8 @@ download_handler = LogDownloadHandler(context = None, \
     received_unknown_entry = cast(None, FnVoid_VoidP_UByte_Long_UByteP_UByte), \
     received_unhandled_entry = cast(None, FnVoid_VoidP_DataP))
 #callback = FnVoid_VoidP_DataP(lambda ctx, p: print("{epoch: %d, value: %s}" % (p.contents.epoch, parse_value(p))))
-callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
-libmetawear.mbl_mw_logger_subscribe(signal, None, callback)
+#callback = FnVoid_VoidP_DataP(lambda ctx, p: data_handler())
+libmetawear.mbl_mw_logger_subscribe(signal, None, device1.callback)
 e = Event()
 libmetawear.mbl_mw_logging_download(device1.board, 0, byref(download_handler))
 print("downloading data...")
