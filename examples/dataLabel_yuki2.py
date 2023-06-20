@@ -11,12 +11,7 @@ import csv
 
 #only printing out the epoch number but not the xyz position.. 
 #try out code in this link: https://mbientlab.com/pythondocs/latest/datasignal.html I just started this...either continue where i left off or restore to previous version and start over
-#also only 1 epoch got printed out, not sure if it's only collecting 1 data point or keep overwriting the old data...
-#the wrong data type error for libmetawear.mbl_mw_logger_subscribe(signal, None, callback) is gone now at least after using signal instead of logger for argument1
-#put the start logging statement in a loop to keep logging!!
-#using sleep means it's just pausing instead of keep logging for five seconds 
 #need to pass in the data handler in the code somewhere for it to print out xyz, maybe replace callback with data handler, now using callback and it's not printing out anything 
-#also the data handler doesn't have any print statement maybe that's why nothing is printing out...
 
 #event
 e = Event()
