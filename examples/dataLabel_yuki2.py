@@ -8,11 +8,17 @@ import platform
 import six
 from threading import Event
 import csv
+#import accelerometer.h
 
 #only printing out the epoch number but not the xyz position.. 
 #try out code in this link: https://mbientlab.com/pythondocs/latest/datasignal.html I just started this...either continue where i left off or restore to previous version and start over
 #need to pass in the data handler in the code somewhere for it to print out xyz, maybe replace callback with data handler, now using callback and it's not printing out anything 
-
+#go back to the base level to understand how everything work!! like go back to the most basic code like how to print out battery level etc
+#so go into the api documentation and try all the code and understand it, maybe see how things are printed out in general first?? and what are the parameter we are supposed to pass in for each handler?
+#maybe go see youtube tutorial to explain the code too or use chat gpt!!! can't just copy the code without understanding it!!
+#hector could use the data labeling system and sensor in August, but ADHD project need the sensor too  eventually so we have to figure this out
+#if we switch sensor we have to go through the same process of understanding the source code so don't see the point..
+#i think this one is not printing out stuffs cause didn't pass in arguments for data handler, but we are supposed to pass in 3 arguments!!
 #event
 e = Event()
 
@@ -57,6 +63,7 @@ def blink_light_green(self):
     libmetawear.mbl_mw_led_load_preset_pattern(byref(pattern), LedPreset.SOLID)
     libmetawear.mbl_mw_led_write_pattern(device1.board, byref(pattern), LedColor.GREEN)
     libmetawear.mbl_mw_led_play(self.board)
+   
 
 def blink_light_red(self):
     pattern= LedPattern(repeat_count= Const.LED_REPEAT_INDEFINITELY)
@@ -86,7 +93,7 @@ def data_handler(self, ctx, data):
 def __init__(self):
     self.device = MetaWear(address)
     self.samples = 0
-    self.callback = FnVoid_VoidP_DataP(data_handler)
+    self.callback = FnVoid_VoidP_DataP(data_handler(self, ctx, ACC_ACCEL_X_AXIS_INDEX))
     self.initTime = 0
     self.thisEpoch = 0
 
@@ -99,6 +106,24 @@ address = "C5:12:30:A0:1D:D8"
 device1 = MetaWear(address)
 connect(device1)
 __init__(device1)
+
+# let accType = libmetawear.mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_ACCELEROMETER)
+# print(accType)
+# switch(accType)
+# {
+#         MBL_MW_MODULE_ACC_TYPE_BMI160:
+#                  break;
+#         MBL_MW_MODULE_ACC_TYPE_MMA8452Q:
+#                  break;
+#         MBL_MW_MODULE_ACC_TYPE_BMA255:
+#                  break;
+#         MBL_MW_MODULE_ACC_TYPE_BMI270:
+#                  break;
+#         MBL_MW_MODULE_TYPE_NA:
+#                  break;
+#         default:
+#                  break;
+# }
 
 #log data 
 signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(device1.board)
@@ -114,6 +139,7 @@ logger = create_voidp(lambda fn: libmetawear.mbl_mw_datasignal_log(signal, None,
 num_datapoint = [0,1,2,3] #use sensor to log 4 data points, how come all the data points are the same???
 print("logging data...")
 blink_light_green(device1)
+print(signal)
 for number in num_datapoint:
     libmetawear.mbl_mw_logging_start(device1.board, 0)
     #sleep(5.0)
